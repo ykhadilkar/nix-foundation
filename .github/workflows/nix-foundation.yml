@@ -43,16 +43,17 @@ on:
 env:
   ACR_RESOURCE_GROUP: ODL-sandbox-06-1505576
   AZURE_CONTAINER_REGISTRY: yatin
-  CONTAINER_NAME: image-workflow-1731073693703
+  CONTAINER_NAME: nix-foundation
   CLUSTER_RESOURCE_GROUP: ODL-sandbox-06-1505576
   CLUSTER_NAME: yatin-aks-wiz
   DOCKER_FILE: ./Dockerfile
   BUILD_CONTEXT_PATH: ./
   CHART_PATH: ./helm/nix-foundation
   CHART_OVERRIDE_PATH: ./helm/nix-foundation/values.yaml
-  CHART_OVERRIDES: image.repository=yatin.azurecr.io/image-workflow-1731073693703,image.tag=${{ github.sha }}
+  CHART_OVERRIDES: image.repository=yatin.azurecr.io/nix-foundation,image.tag=${{ github.sha }}
   NAMESPACE: namespace-workflow-1731073693703
-
+  IMAGE_REPO: yatin.azurecr.io/samples/nix-foundation
+  IMAGE_TAG: ${{ github.sha }}
 jobs:
   buildImage:
     permissions:
@@ -70,11 +71,33 @@ jobs:
           client-id: ${{ secrets.AZURE_CLIENT_ID }}
           tenant-id: ${{ secrets.AZURE_TENANT_ID }}
           subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+      
+      - name: Build the Docker image
+        run: cd ${{ env.BUILD_CONTEXT_PATH }} && docker build . --tag ${{ env.IMAGE_REPO }}:${{ env.IMAGE_TAG }} 
+      
+      - name: Download Wiz CLI
+        run: curl -o wizcli https://wizcli.app.wiz.io/latest/wizcli && chmod +x wizcli
 
-      # Builds and pushes an image up to your Azure Container Registry
-      - name: Build and push image to ACR
-        run: |
-          az acr build --image ${{ env.CONTAINER_NAME }}:${{ github.sha }} --registry ${{ env.AZURE_CONTAINER_REGISTRY }} -g ${{ env.ACR_RESOURCE_GROUP }} -f ${{ env.DOCKER_FILE }} ${{ env.BUILD_CONTEXT_PATH }}
+      - name: Authenticate to Wiz
+        run: sudo -E ./wizcli auth --id "$WIZ_CLIENT_ID" --secret "$WIZ_CLIENT_SECRET"
+        env:
+          WIZ_CLIENT_ID: ${{ secrets.WIZ_CLIENT_ID }}
+          WIZ_CLIENT_SECRET: ${{ secrets.WIZ_CLIENT_SECRET }}
+
+      - name: Run Wiz CLI image scan
+        id: scan
+        run: |-
+          sudo -E ./wizcli docker scan -i ${{ env.IMAGE_REPO }}:${{ env.IMAGE_TAG }} --policy-hits-only --driver mountWithLayers \
+          --dockerfile "./Dockerfile" --output wiz-output.json,sarif,true --tag github_action_run_id=${{ github.run_id }} \
+          --sbom-format spdx-json --sbom-output-file sbom.json
+        continue-on-error: true
+
+      - name: Push docker image
+        run: docker push ${{ env.IMAGE_REPO }}:${{ env.IMAGE_TAG }}
+        
+      - name: Run Wiz CLI image tag
+        run: sudo -E ./wizcli docker tag -i ${{ env.IMAGE_REPO }}:${{ env.IMAGE_TAG }}
+
   deploy:
     permissions:
       actions: read
