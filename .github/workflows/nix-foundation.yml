@@ -52,7 +52,7 @@ env:
   CHART_OVERRIDE_PATH: ./helm/nix-foundation/values.yaml
   CHART_OVERRIDES: image.repository=yatin.azurecr.io/image-workflow-1731073693703,image.tag=${{ github.sha }}
   NAMESPACE: namespace-workflow-1731073693703
-  IMAGE_REPO: yatin.azurecr.io/samples/image-workflow-1731073693703
+  IMAGE_REPO: yatin.azurecr.io/image-workflow-1731073693703
   IMAGE_TAG: ${{ github.sha }}
 jobs:
   buildImage:
