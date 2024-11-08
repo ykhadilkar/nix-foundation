@@ -43,16 +43,16 @@ on:
 env:
   ACR_RESOURCE_GROUP: ODL-sandbox-06-1505576
   AZURE_CONTAINER_REGISTRY: yatin
-  CONTAINER_NAME: nix-foundation
+  CONTAINER_NAME: image-workflow-1731073693703
   CLUSTER_RESOURCE_GROUP: ODL-sandbox-06-1505576
   CLUSTER_NAME: yatin-aks-wiz
   DOCKER_FILE: ./Dockerfile
   BUILD_CONTEXT_PATH: ./
   CHART_PATH: ./helm/nix-foundation
   CHART_OVERRIDE_PATH: ./helm/nix-foundation/values.yaml
-  CHART_OVERRIDES: image.repository=yatin.azurecr.io/nix-foundation,image.tag=${{ github.sha }}
+  CHART_OVERRIDES: image.repository=yatin.azurecr.io/image-workflow-1731073693703,image.tag=${{ github.sha }}
   NAMESPACE: namespace-workflow-1731073693703
-  IMAGE_REPO: yatin.azurecr.io/samples/nix-foundation
+  IMAGE_REPO: yatin.azurecr.io/samples/image-workflow-1731073693703
   IMAGE_TAG: ${{ github.sha }}
 jobs:
   buildImage:
